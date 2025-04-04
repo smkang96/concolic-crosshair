@@ -1178,7 +1178,8 @@ class SymbolicBool(SymbolicIntable, AtomicSymbolicValue):
 
 
 class SymbolicInt(SymbolicIntable, AtomicSymbolicValue):
-    def __init__(self, smtvar: Union[str, z3.ExprRef], typ: Type = int):
+    def __init__(self, smtvar: Union[str, z3.ExprRef], typ: Type = int, real_value: int | None = None):
+        self.real_value = real_value
         assert typ == int
         if (not isinstance(smtvar, str)) and (not smtvar.is_int()):
             raise CrossHairInternal(
@@ -1205,7 +1206,10 @@ class SymbolicInt(SymbolicIntable, AtomicSymbolicValue):
         return int.from_bytes(b, byteorder, signed=signed)  # type: ignore
 
     def __ch_realize__(self) -> object:
-        return context_statespace().find_model_value(self.var)
+        if self.real_value is not None:
+            return self.real_value
+        else:
+            return context_statespace().find_model_value(self.var)
 
     def __repr__(self):
         if self < 0:
@@ -4366,11 +4370,14 @@ def make_union_choice(creator: SymbolicFactory, *pytypes):
 
 
 def make_concrete_or_symbolic(typ: type):
-    def make(creator: SymbolicFactory, *type_args):
+    def make(creator: SymbolicFactory, real_value: Any = None, *type_args):
         nonlocal typ
         space = context_statespace()
         varname, pytype = creator.varname, creator.pytype
         ret = typ(creator.varname, pytype)
+        if real_value is not None:
+            from crosshair.z3util import z3Aassert, z3Eq
+            z3Aassert(space.solver, z3Eq(ret.var, z3.IntVal(real_value)))
 
         premature_stats, symbolic_stats = space.stats_lookahead()
         bad_iters = (

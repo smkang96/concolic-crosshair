@@ -660,6 +660,7 @@ def proxy_for_type(
     typ: Any,
     varname: str,
     allow_subtypes: bool = False,
+    real_value: Any = None,
 ) -> Any:
     space = context_statespace()
     with NoTracing():
@@ -682,7 +683,10 @@ def proxy_for_type(
         proxy_factory = _SIMPLE_PROXIES.get(origin)
         if proxy_factory:
             recursive_proxy_factory = SymbolicFactory(space, typ, varname)
-            return proxy_factory(recursive_proxy_factory, *type_args)
+            if real_value is None:
+                return proxy_factory(recursive_proxy_factory, *type_args)
+            else:
+                return proxy_factory(recursive_proxy_factory, real_value, *type_args)
         if hasattr(typ, "__supertype__") and typing_inspect.is_new_type(typ):
             return proxy_for_type(typ.__supertype__, varname, allow_subtypes)  # type: ignore
         if allow_subtypes and typ is not object:
@@ -1497,6 +1501,7 @@ def attempt_call(
     elif efilter.user_exc is not None:
         (e, tb) = efilter.user_exc
         detail = name_of_type(type(e)) + ": " + str(e)
+        raise e
         tb_desc = tb.format()
         frame_filename, frame_lineno = frame_summary_for_fn(conditions.src_fn, tb)
         with ResumedTracing():
