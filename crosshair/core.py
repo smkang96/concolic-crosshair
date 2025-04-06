@@ -686,7 +686,7 @@ def proxy_for_type(
             if real_value is None:
                 return proxy_factory(recursive_proxy_factory, *type_args)
             else:
-                return proxy_factory(recursive_proxy_factory, real_value, *type_args)
+                return proxy_factory(recursive_proxy_factory, *type_args, real_value = real_value)
         if hasattr(typ, "__supertype__") and typing_inspect.is_new_type(typ):
             return proxy_for_type(typ.__supertype__, varname, allow_subtypes)  # type: ignore
         if allow_subtypes and typ is not object:

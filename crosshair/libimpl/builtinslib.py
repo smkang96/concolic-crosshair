@@ -4370,7 +4370,7 @@ def make_union_choice(creator: SymbolicFactory, *pytypes):
 
 
 def make_concrete_or_symbolic(typ: type):
-    def make(creator: SymbolicFactory, real_value: Any = None, *type_args):
+    def make(creator: SymbolicFactory, *type_args, real_value: Any = None):
         nonlocal typ
         space = context_statespace()
         varname, pytype = creator.varname, creator.pytype
